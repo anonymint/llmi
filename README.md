@@ -18,9 +18,10 @@
    ```
 
 2. **Configure your API Key:**
-   Add your Gemini API key to `~/.llmi`:
+   Copy the example config and add your Gemini API key:
    ```bash
-   echo "GEMINI_API_KEY=your_key_here" >> ~/.llmi
+   cp .llmi.example ~/.llmi
+   # Then edit ~/.llmi and add your key
    ```
 
 3. **Source the Zsh widget:**
