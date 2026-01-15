@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"unicode/utf8"
 )
 
 type Context struct {
@@ -14,12 +15,38 @@ type Context struct {
 	CustomRules string
 }
 
+func sanitize(s string) string {
+	if utf8.ValidString(s) {
+		return s
+	}
+	v := make([]rune, 0, len(s))
+	for i, r := range s {
+		if r == utf8.RuneError {
+			_, size := utf8.DecodeRuneInString(s[i:])
+			if size == 1 {
+				continue
+			}
+		}
+		v = append(v, r)
+	}
+	return string(v)
+}
+
 func GetContext(histCount int, customRulesPath string) *Context {
 	ctx := &Context{}
 	ctx.History = getHistory(histCount)
 	ctx.Aliases = getAliases()
+	
+	// Sanitize everything
+	for i, h := range ctx.History {
+		ctx.History[i] = sanitize(h)
+	}
+	for i, a := range ctx.Aliases {
+		ctx.Aliases[i] = sanitize(a)
+	}
+
 	if customRulesPath != "" {
-		ctx.CustomRules = getCustomRules(customRulesPath)
+		ctx.CustomRules = sanitize(getCustomRules(customRulesPath))
 	}
 	return ctx
 }

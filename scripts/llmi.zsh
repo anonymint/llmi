@@ -5,33 +5,42 @@ LLMI_BIN="/Users/mint/workspace/llmi/llmi"
 LLMI_GHOST_COLOR=$'\e[38;5;242m' # Dim grey
 LLMI_RESET=$'\e[0m'
 
+# Fetch prefix from binary
+LLMI_PREFIX=$($LLMI_BIN --print-prefix 2>/dev/null || echo ";;")
+
 _llmi_suggested_cmd=""
 
 llmi-widget() {
-    # Only trigger if the command line starts with "llmi "
-    if [[ "$BUFFER" == llmi\ * ]]; then
-        local query="${BUFFER#llmi }"
-        
-        # Show "thinking" indicator
-        POSTDISPLAY=" ${LLMI_GHOST_COLOR}... thinking${LLMI_RESET}"
-        zle redisplay
+    # Check if the prefix exists anywhere in the buffer
+    if [[ "$BUFFER" == *"$LLMI_PREFIX"* ]]; then
+        local prefix_index="${BUFFER%%"$LLMI_PREFIX"*}"
+        local pre_context="$prefix_index"
+        local query="${BUFFER#*"$LLMI_PREFIX"}"
+        query="${query# }" # trim leading space
 
-        # Call the binary and get the suggested command
-        _llmi_suggested_cmd=$($LLMI_BIN --query "$query" 2>/dev/null)
+        # Call the binary
+        local suggested_cmd=$($LLMI_BIN --query "$query" --pre-context "$pre_context" 2>/dev/null)
 
-        if [[ -n "$_llmi_suggested_cmd" ]]; then
-            # Display the suggestion as ghost text
-            POSTDISPLAY=" ${LLMI_GHOST_COLOR}# → $_llmi_suggested_cmd${LLMI_RESET}"
-        else
-            POSTDISPLAY=" ${LLMI_GHOST_COLOR}# No suggestion found${LLMI_RESET}"
+        if [[ -n "$suggested_cmd" ]]; then
+            # REPLACE the buffer with the (possibly locked) suggested command
+            BUFFER="$pre_context$suggested_cmd"
+            
+            # If it's locked, move cursor to the start of the lock for easy deletion
+            if [[ "$suggested_cmd" == SAFETY_LOCK_* ]]; then
+                CURSOR=$#pre_context
+            else
+                CURSOR=$#BUFFER
+            fi
+            
+            _llmi_suggested_cmd=""
+            zle -R
         fi
-        zle redisplay
     else
-        # If not llmi, just behave like a normal Enter key
+        # Normal behavior: No messages, just accept line
+        _llmi_suggested_cmd=""
         zle accept-line
     fi
 }
-
 llmi-expand() {
     if [[ -n "$_llmi_suggested_cmd" ]]; then
         # Replace the buffer with the suggested command
@@ -39,7 +48,9 @@ llmi-expand() {
         CURSOR=$#BUFFER
         POSTDISPLAY=""
         _llmi_suggested_cmd=""
-        zle redisplay
+        # Clear any remaining message area
+        zle -M ""
+        zle -R
     fi
 }
 

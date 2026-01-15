@@ -13,13 +13,15 @@ type Config struct {
 	Model             string
 	HistCommands      int
 	CustomRulesPath   string
+	TriggerPrefix     string
 }
 
 func LoadConfig() *Config {
 	cfg := &Config{
 		GeminiAPIKey: os.Getenv("GEMINI_API_KEY"),
-		Model:        "gemini-1.5-flash",
+		Model:        "models/gemini-2.5-flash-lite",
 		HistCommands: 100,
+		TriggerPrefix: ";;",
 	}
 
 	home, _ := os.UserHomeDir()
@@ -47,6 +49,8 @@ func LoadConfig() *Config {
 					}
 				case "CUSTOM_RULES_PATH":
 					cfg.CustomRulesPath = val
+				case "TRIGGER_PREFIX":
+					cfg.TriggerPrefix = val
 				}
 			}
 		}

@@ -1,6 +1,14 @@
 # llmi
 
-`llmi` is a Zsh-integrated CLI tool that uses Google Gemini to translate natural language into shell commands.
+`llmi` is a Zsh-integrated CLI tool that uses Google Gemini to translate natural language into shell commands with context awareness.
+
+## Features
+
+- **Context Aware:** Sends your recent shell history and aliases to the LLM to provide better suggestions.
+- **Piping Support:** Understands context from previous commands (e.g., `cat file.txt | ;; process this`).
+- **Instant Swap:** Automatically replaces your query with the generated command directly in your prompt.
+- **Safety Lock:** Prepend a safety string to destructive commands (like `rm -rf`) to prevent accidental execution.
+- **Configurable:** Change the trigger prefix, model, and history depth via `~/.llmi`.
 
 ## Installation
 
@@ -10,7 +18,7 @@
    ```
 
 2. **Configure your API Key:**
-   Add your Gemini API key to `~/.llmi` or export it as `GEMINI_API_KEY`:
+   Add your Gemini API key to `~/.llmi`:
    ```bash
    echo "GEMINI_API_KEY=your_key_here" >> ~/.llmi
    ```
@@ -23,17 +31,19 @@
 
 ## Usage
 
-1. Type `llmi` followed by your query:
+1. Type your configured prefix (default `;;`) followed by your query:
    ```bash
-   llmi read the last 5 lines of access.log
+   ;; read the last 5 lines of access.log
    ```
-2. Hit `Enter`. You'll see the suggested command in dimmed text (ghost text).
-3. Hit `Ctrl-G` to expand the suggestion into your main buffer.
-4. Edit the command if needed, and hit `Enter` again to execute it.
+2. Hit `Enter`. The text will immediately swap to the suggested command.
+3. If the command is dangerous, it will be locked:
+   `SAFETY_LOCK_REMOVE_THIS_PREFIX_TO_RUN rm -rf *`
+4. Edit the command if needed (or delete the safety lock), and hit `Enter` again to execute.
 
 ## Configuration (`~/.llmi`)
 
 - `GEMINI_API_KEY`: Your Google Gemini API key.
-- `MODEL`: The model to use (default: `gemini-1.5-flash`).
+- `MODEL`: The model to use (default: `models/gemini-2.5-flash-lite`).
 - `HIST_COMMANDS`: Number of history items to include in context (default: `100`).
+- `TRIGGER_PREFIX`: The prefix to trigger the LLM (default: `;;`).
 - `CUSTOM_RULES_PATH`: Path to a markdown file with custom shell rules.
