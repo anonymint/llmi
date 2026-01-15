@@ -1,7 +1,8 @@
 # llmi Zsh Widget
 
 # Configuration
-LLMI_BIN="/Users/mint/workspace/llmi/llmi"
+# Try to find llmi in PATH, otherwise fallback to the absolute development path
+LLMI_BIN=$(command -v llmi || echo "/Users/mint/workspace/llmi/llmi")
 LLMI_GHOST_COLOR=$'\e[38;5;242m' # Dim grey
 LLMI_RESET=$'\e[0m'
 
@@ -19,9 +20,15 @@ llmi-widget() {
         query="${query# }" # trim leading space
 
         # Call the binary
+        if [[ ! -f "$LLMI_BIN" ]]; then
+            zle -M " ❌ Error: Binary not found at $LLMI_BIN. Run 'make build' first."
+            return
+        fi
+
         local suggested_cmd=$($LLMI_BIN --query "$query" --pre-context "$pre_context" 2>/dev/null)
 
         if [[ -n "$suggested_cmd" ]]; then
+            zle -M "" # Clear any error messages
             # REPLACE the buffer with the (possibly locked) suggested command
             BUFFER="$pre_context$suggested_cmd"
             
